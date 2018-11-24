@@ -218,7 +218,7 @@ public class KeptOnDeathPlugin extends Plugin
 				itemWidget.setAction(1, String.format(ACTION_TEXT, c.getName()));
 				if (keepCount > 0 || !checkTradeable(i.getId(), c))
 				{
-					keepCount = keepCount < 1 ? 0 : keepCount - 1;
+					keepCount = keepCount < 0 ? -1 : keepCount - 1;
 
 					// Certain items are turned into broken variants inside the wilderness.
 					if (BrokenOnDeathItem.check(i.getId()))
@@ -228,20 +228,12 @@ public class KeptOnDeathPlugin extends Plugin
 						continue;
 					}
 
-					// Ignore all non tradeables in wildy except for the above case(s).
-					if (wildyLevel > 0)
-					{
-						itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
-						lostItems.add(itemWidget);
-						continue;
-					}
-
 					// Certain items are always lost on death and have a white outline
 					AlwaysLostItem item = AlwaysLostItem.getByItemID(i.getId());
 					if (item != null)
 					{
 						// Some of these items are actually lost on death, like the looting bag
-						if (!item.isKept())
+						if (!item.isKept() || wildyLevel > 0)
 						{
 							itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
 							itemWidget.setBorderType(2);
@@ -249,6 +241,14 @@ public class KeptOnDeathPlugin extends Plugin
 							hasAlwaysLost = true;
 							continue;
 						}
+					}
+
+					// Ignore all non tradeables in wildy except for the above case(s).
+					if (wildyLevel > 0 && keepCount == -1)
+					{
+						itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
+						lostItems.add(itemWidget);
+						continue;
 					}
 
 					itemWidget.setOnOpListener(SCRIPT_ID, 1, i.getQuantity(), c.getName());
