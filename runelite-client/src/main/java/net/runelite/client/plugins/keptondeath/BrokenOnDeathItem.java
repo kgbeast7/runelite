@@ -24,7 +24,7 @@
  */
 package net.runelite.client.plugins.keptondeath;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.HashSet;
 import net.runelite.api.ItemID;
 
 public enum BrokenOnDeathItem
@@ -83,18 +83,16 @@ public enum BrokenOnDeathItem
 	GOLD_DECORATIVE_SHIELD(ItemID.DECORATIVE_SHIELD_4512),
 	GOLD_DECORATIVE_SWORD(ItemID.DECORATIVE_SWORD_4508);
 
-
 	private final int itemID;
 
-	private static final ImmutableMap<Integer, BrokenOnDeathItem> ID_MAP;
+	private static final HashSet<Integer> ID_SET;
 	static
 	{
-		ImmutableMap.Builder<Integer, BrokenOnDeathItem> map = ImmutableMap.builder();
+		ID_SET = new HashSet<>();
 		for (BrokenOnDeathItem p : values())
 		{
-			map.put(p.itemID, p);
+			ID_SET.add(p.itemID);
 		}
-		ID_MAP = map.build();
 	}
 
 	BrokenOnDeathItem(int itemID)
@@ -104,6 +102,6 @@ public enum BrokenOnDeathItem
 
 	public static boolean check(int itemID)
 	{
-		return ID_MAP.get(itemID) != null;
+		return ID_SET.contains(itemID);
 	}
 }

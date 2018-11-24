@@ -31,7 +31,8 @@ import net.runelite.api.ItemID;
 public enum AlwaysLostItem
 {
 	RUNE_POUCH(ItemID.RUNE_POUCH, true),
-	LOOTING_BAG(ItemID.LOOTING_BAG, false);
+	LOOTING_BAG(ItemID.LOOTING_BAG, false),
+	CLUE_BOX(ItemID.CLUE_BOX, false);
 
 	private final int itemID;
 	@Getter

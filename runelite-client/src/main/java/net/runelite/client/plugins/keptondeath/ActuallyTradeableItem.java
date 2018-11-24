@@ -24,7 +24,7 @@
  */
 package net.runelite.client.plugins.keptondeath;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.HashSet;
 import static net.runelite.api.ItemID.*;
 
 public enum ActuallyTradeableItem
@@ -57,18 +57,17 @@ public enum ActuallyTradeableItem
 
 	private final int[] ids;
 
-	private static final ImmutableMap<Integer, Boolean> ID_MAP;
+	private static final HashSet<Integer> ID_SET;
 	static
 	{
-		ImmutableMap.Builder<Integer, Boolean> map = ImmutableMap.builder();
+		ID_SET = new HashSet<>();
 		for (ActuallyTradeableItem p : values())
 		{
 			for (int id : p.ids)
 			{
-				map.put(id, true);
+				ID_SET.add(id);
 			}
 		}
-		ID_MAP = map.build();
 	}
 
 	ActuallyTradeableItem(int... ids)
@@ -78,6 +77,6 @@ public enum ActuallyTradeableItem
 
 	public static Boolean check(int id)
 	{
-		return ID_MAP.get(id) != null;
+		return ID_SET.contains(id);
 	}
 }
