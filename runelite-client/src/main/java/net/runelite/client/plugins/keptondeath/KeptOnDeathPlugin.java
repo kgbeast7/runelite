@@ -171,7 +171,17 @@ public class KeptOnDeathPlugin extends Plugin
 				@Override
 				public int compare(Item o1, Item o2)
 				{
-					return itemManager.getItemPrice(o2.getId()) - itemManager.getItemPrice(o1.getId());
+					int exchangePrice2 = itemManager.getItemPrice(o2.getId());
+					if (exchangePrice2 == 0)
+					{
+						exchangePrice2 = itemManager.getItemComposition(o2.getId()).getPrice();
+					}
+					int exchangePrice1 = itemManager.getItemPrice(o1.getId());
+					if (exchangePrice1 == 0)
+					{
+						exchangePrice1 = itemManager.getItemComposition(o1.getId()).getPrice();
+					}
+					return  exchangePrice2 - exchangePrice1;
 				}
 			});
 
