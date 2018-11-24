@@ -122,6 +122,7 @@ public class WidgetID
 	public static final int ZEAH_MESS_HALL_GROUP_ID = 235;
 	public static final int LOOTING_BAG_GROUP_ID = 81;
 	public static final int SKOTIZO_GROUP_ID = 308;
+	public static final int ITEMS_KEPT_ON_DEATH_GROUP_ID = 4;
 
 	static class WorldMap
 	{
@@ -348,6 +349,7 @@ public class WidgetID
 
 	static class ResizableViewport
 	{
+		static final int ITEMS_KEPT_ON_DEATH = 13;
 		static final int CLAN_CHAT_TAB = 35;
 		static final int FRIENDS_TAB = 37;
 		static final int IGNORES_TAB = 36;
@@ -731,5 +733,14 @@ public class WidgetID
 	static class Skotizo
 	{
 		static final int CONTAINER = 3;
+	}
+
+	static class KeptOnDeath
+	{
+		static final int KEPT_ITEMS_CONTAINER = 18;
+		static final int LOST_ITEMS_CONTAINER = 21;
+		static final int LOST_ITEMS_VALUE = 23;
+		static final int INFORMATION_CONTAINER = 29;
+		static final int MAX_ITEMS_KEPT_ON_DEATH = 30;
 	}
 }
