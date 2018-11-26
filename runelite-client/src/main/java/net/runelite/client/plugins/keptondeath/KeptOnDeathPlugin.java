@@ -264,6 +264,7 @@ public class KeptOnDeathPlugin extends Plugin
 
 				ItemComposition c = itemManager.getItemComposition(i.getId());
 				itemWidget.setAction(1, String.format(ACTION_TEXT, c.getName()));
+				itemWidget.setOnOpListener(SCRIPT_ID, 1, i.getQuantity(), c.getName());
 
 				// Bonds are always kept and do not count towards the limit.
 				if (id == ItemID.OLD_SCHOOL_BOND || id == ItemID.OLD_SCHOOL_BOND_UNTRADEABLE)
