@@ -78,14 +78,13 @@ public class KeptOnDeathPlugin extends Plugin
 	private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#,###");
 	private static final String MAX_KEPT_ITEMS_FORMAT = "<col=ffcc33>Max items kept on death :<br><br><col=ffcc33>~ %s ~";
 	private static final String ACTION_TEXT = "Item: <col=ff981f>%s";
-	private static final String DEFAULT = "3 items are protected by default";
+	private static final String DEFAULT = "<col=FFFFFF>3<col=FF981F> items protected by default";
 	private static final String IS_SKULLED = "<col=ff3333>PK skull<col=ff981f> -3";
 	private static final String PROTECTING_ITEM = "<col=ff3333>Protect Item prayer<col=ff981f> +1";
-	private static final String ACTUAL = "Actually protecting %s items";
+	private static final String ACTUAL = "Actually protecting <col=FFFFFF>%s<col=FF981F> items";
 	private static final String WHITE_OUTLINE = "Items with a <col=ffffff>white outline<col=ff981f> will always be lost.";
-	private static final String HAS_BOND = "<col=00ff00>Bonds</col> are always protected, so are not shown here.";
 	private static final String CHANGED_MECHANICS = "Untradeable items are kept on death in non-pvp scenarios.";
-	private static final String NON_PVP = "If you die you have 1 hour to retrieve your lost items.";
+	private static final String NON_PVP = "You will have 1 hour to retrieve your lost items.";
 	private static final String LINE_BREAK = "<br>";
 	private static final int ORIGINAL_INFO_HEIGHT = 183;
 
@@ -112,7 +111,6 @@ public class KeptOnDeathPlugin extends Plugin
 	private boolean isSkulled = false;
 	private boolean protectingItem = false;
 	private boolean hasAlwaysLost = false;
-	private boolean hasBond = false;
 	private int wildyLevel = -1;
 
 	@Subscribe
@@ -176,10 +174,8 @@ public class KeptOnDeathPlugin extends Plugin
 
 	private void recreateItemsKeptOnDeathWidget()
 	{
-		// These should always be reset as they determine visible text based on item positions
-		// and item positions can change anytime this function is called
+		// Text flags based on items should be reset everytime the widget is recreated
 		hasAlwaysLost = false;
-		hasBond = false;
 
 		Widget lost = client.getWidget(WidgetInfo.ITEMS_LOST_ON_DEATH_CONTAINER);
 		Widget kept = client.getWidget(WidgetInfo.ITEMS_KEPT_ON_DEATH_CONTAINER);
@@ -225,12 +221,6 @@ public class KeptOnDeathPlugin extends Plugin
 					continue;
 				}
 
-				if (id == ItemID.OLD_SCHOOL_BOND || id == ItemID.OLD_SCHOOL_BOND_UNTRADEABLE)
-				{
-					hasBond = true;
-					continue;
-				}
-
 				Widget itemWidget = client.createWidget();
 				itemWidget.setType(WidgetType.GRAPHIC);
 				itemWidget.setItemId(i.getId());
@@ -243,6 +233,29 @@ public class KeptOnDeathPlugin extends Plugin
 
 				ItemComposition c = itemManager.getItemComposition(i.getId());
 				itemWidget.setAction(1, String.format(ACTION_TEXT, c.getName()));
+
+				// Bonds are always kept and do not count towards the limit.
+				if (id == ItemID.OLD_SCHOOL_BOND || id == ItemID.OLD_SCHOOL_BOND_UNTRADEABLE)
+				{
+					keptItems.add(itemWidget);
+					continue;
+				}
+
+				// Certain items are always lost on death and have a white outline which we need to readd
+				AlwaysLostItem item = AlwaysLostItem.getByItemID(i.getId());
+				if (item != null)
+				{
+					// Some of these items are kept on death (outside wildy), like the Rune pouch. Ignore them
+					if (!item.isKept() || wildyLevel > 0)
+					{
+						itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
+						itemWidget.setBorderType(2);
+						lostItems.add(itemWidget);
+						hasAlwaysLost = true;
+						continue;
+					}
+				}
+
 				if (keepCount > 0 || (!checkTradeable(i.getId(), c) && wildyLevel < 21))
 				{
 					keepCount = keepCount < 0 ? -1 : keepCount - 1;
@@ -250,35 +263,17 @@ public class KeptOnDeathPlugin extends Plugin
 					// Certain items are turned into broken variants inside the wilderness.
 					if (BrokenOnDeathItem.check(i.getId()))
 					{
-						itemWidget.setOnOpListener(SCRIPT_ID, 1, i.getQuantity(), c.getName());
 						keptItems.add(itemWidget);
 						continue;
-					}
-
-					// Certain items are always lost on death and have a white outline
-					AlwaysLostItem item = AlwaysLostItem.getByItemID(i.getId());
-					if (item != null)
-					{
-						// Some of these items are actually lost on death, like the looting bag
-						if (!item.isKept() || wildyLevel > 0)
-						{
-							itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
-							itemWidget.setBorderType(2);
-							lostItems.add(itemWidget);
-							hasAlwaysLost = true;
-							continue;
-						}
 					}
 
 					// Ignore all non tradeables in wildy except for the above case(s).
 					if (wildyLevel > 0 && keepCount == -1)
 					{
-						itemWidget.setOnOpListener(SCRIPT_ID, 0, i.getQuantity(), c.getName());
 						lostItems.add(itemWidget);
 						continue;
 					}
 
-					itemWidget.setOnOpListener(SCRIPT_ID, 1, i.getQuantity(), c.getName());
 					keptItems.add(itemWidget);
 				}
 				else
@@ -369,11 +364,6 @@ public class KeptOnDeathPlugin extends Plugin
 			textToAdd += LINE_BREAK + LINE_BREAK + WHITE_OUTLINE;
 		}
 
-		if (hasBond)
-		{
-			textToAdd += LINE_BREAK + LINE_BREAK + HAS_BOND;
-		}
-
 		textToAdd += LINE_BREAK + LINE_BREAK + CHANGED_MECHANICS;
 
 		return textToAdd;
@@ -440,6 +430,7 @@ public class KeptOnDeathPlugin extends Plugin
 			if (x.getId() == WidgetInfo.ITEMS_KEPT_CUSTOM_TEXT_CONTAINER.getId())
 			{
 				x.setText(getUpdatedInfoText());
+				x.revalidate();
 				return;
 			}
 		}
