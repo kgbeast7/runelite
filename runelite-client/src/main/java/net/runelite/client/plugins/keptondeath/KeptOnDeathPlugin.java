@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import javax.inject.Inject;
 import lombok.Getter;
@@ -41,6 +42,7 @@ import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
 import net.runelite.api.SkullIcon;
+import net.runelite.api.SpriteID;
 import net.runelite.api.Varbits;
 import net.runelite.api.WidgetType;
 import net.runelite.api.events.GameTick;
@@ -52,13 +54,16 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @PluginDescriptor(
 	name = "Kept on Death",
-	description = "Reworks the Items Kept on Death interface to be more accurate"
+	description = "Reworks the Items Kept on Death interface to be more accurate",
+	enabledByDefault = false
 )
 @Slf4j
 public class KeptOnDeathPlugin extends Plugin
 {
+	// Handles Clicking on items in Kept on Death Interface
 	private static final int SCRIPT_ID = 1603;
 
+	// Item Container helpers
 	private static final int MAX_ROW_ITEMS = 8;
 	private static final int STARTING_X = 5;
 	private static final int STARTING_Y = 25;
@@ -66,24 +71,33 @@ public class KeptOnDeathPlugin extends Plugin
 	private static final int Y_INCREMENT = 38;
 	private static final int ORIGINAL_WIDTH = 36;
 	private static final int ORIGINAL_HEIGHT = 32;
+	private static final int ORIGINAL_LOST_HEIGHT = 209;
+	private static final int ORIGINAL_LOST_Y = 107;
 
+	// Information panel text helpers
+	private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#,###");
 	private static final String MAX_KEPT_ITEMS_FORMAT = "<col=ffcc33>Max items kept on death :<br><br><col=ffcc33>~ %s ~";
 	private static final String ACTION_TEXT = "Item: <col=ff981f>%s";
-	private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#,###");
-
-	private static final String NORMAL = "Protecting %s items by default";
+	private static final String DEFAULT = "3 items are protected by default";
 	private static final String IS_SKULLED = "<col=ff3333>PK skull<col=ff981f> -3";
 	private static final String PROTECTING_ITEM = "<col=ff3333>Protect Item prayer<col=ff981f> +1";
+	private static final String ACTUAL = "Actually protecting %s items";
 	private static final String WHITE_OUTLINE = "Items with a <col=ffffff>white outline<col=ff981f> will always be lost.";
 	private static final String HAS_BOND = "<col=00ff00>Bonds</col> are always protected, so are not shown here.";
 	private static final String CHANGED_MECHANICS = "Untradeable items are kept on death in non-pvp scenarios.";
 	private static final String NON_PVP = "If you die you have 1 hour to retrieve your lost items.";
 	private static final String LINE_BREAK = "<br>";
+	private static final int ORIGINAL_INFO_HEIGHT = 183;
 
-	private boolean isSkulled = false;
-	private boolean protectingItem = false;
-	private boolean hasAlwaysLost = false;
-	private boolean hasBond = false;
+	// Button Names and Images
+	private static final String PROTECT_ITEM_BUTTON_NAME = "Protect Item Prayer";
+	private static final String SKULLED_BUTTON_NAME = "Skulled";
+	private static final String LOW_WILDY_BUTTON_NAME = "Low Wildy (1-20)";
+	private static final String DEEP_WILDY_BUTTON_NAME = "Deep Wildy (21+)";
+	private static final int PROTECT_ITEM_SPRITE_ID = SpriteID.PRAYER_PROTECT_ITEM;
+	private static final int SKULL_SPRITE_ID = SpriteID.PLAYER_KILLER_SKULL_523;
+	private static final int SWORD_SPRITE_ID = SpriteID.MULTI_COMBAT_ZONE_CROSSED_SWORDS;
+	private static final int SKULL_2_SPRITE_ID = SpriteID.FIGHT_PITS_WINNER_SKULL_RED;
 
 	@Inject
 	private Client client;
@@ -94,53 +108,67 @@ public class KeptOnDeathPlugin extends Plugin
 	@Getter
 	private boolean widgetVisible = false;
 
+	private LinkedHashMap<String, WidgetButton> buttonMap = new LinkedHashMap<>();
+	private boolean isSkulled = false;
+	private boolean protectingItem = false;
+	private boolean hasAlwaysLost = false;
+	private boolean hasBond = false;
+	private int wildyLevel = -1;
+
 	@Subscribe
 	protected void onGameTick(GameTick t)
 	{
 		boolean old = widgetVisible;
 		widgetVisible = client.getWidget(WidgetInfo.ITEMS_LOST_ON_DEATH_CONTAINER) != null;
+		// TODO: Determine if they reopened widget without closing it.
 		if (widgetVisible && !old)
 		{
 			// Above 20 wildy we have nothing new to display
 			if (getCurrentWildyLevel() <= 20)
 			{
+				syncSettings();
+				createWidgetButtons();
 				recreateItemsKeptOnDeathWidget();
-				updateKeptWidgetInfoText();
 			}
 		}
+	}
+
+	// Sync user settings
+	private void syncSettings()
+	{
+		SkullIcon s = client.getLocalPlayer().getSkullIcon();
+		isSkulled = (s != null && s.equals(SkullIcon.SKULL));
+		protectingItem = client.getVar(Varbits.PRAYER_PROTECT_ITEM) == 1;
 	}
 
 	private int getCurrentWildyLevel()
 	{
 		if (client.getVar(Varbits.IN_WILDERNESS) != 1)
 		{
-			return -1;
+			wildyLevel = -1;
+			return wildyLevel;
 		}
 
 		int y = client.getLocalPlayer().getWorldLocation().getY();
 
 		int underLevel = ((y - 9920) / 8) + 1;
 		int upperLevel = ((y - 3520) / 8) + 1;
-		return (y > 6400 ? underLevel : upperLevel);
+		wildyLevel = (y > 6400 ? underLevel : upperLevel);
+		return wildyLevel;
 	}
 
 	private int getDefaultItemsKept()
 	{
-		isSkulled = false;
-		protectingItem = false;
 		int count = 3;
 
-		SkullIcon s = client.getLocalPlayer().getSkullIcon();
-		if (s != null && s.equals(SkullIcon.SKULL))
+		if (isSkulled)
 		{
 			count = 0;
-			isSkulled = true;
 		}
 
-		if (client.getVar(Varbits.PRAYER_PROTECT_ITEM) == 1)
+		if (protectingItem)
 		{
 			count += 1;
-			protectingItem = true;
 		}
 
 		return count;
@@ -148,8 +176,8 @@ public class KeptOnDeathPlugin extends Plugin
 
 	private void recreateItemsKeptOnDeathWidget()
 	{
-		isSkulled = false;
-		protectingItem = false;
+		// These should always be reset as they determine visible text based on item positions
+		// and item positions can change anytime this function is called
 		hasAlwaysLost = false;
 		hasBond = false;
 
@@ -181,12 +209,11 @@ public class KeptOnDeathPlugin extends Plugin
 					{
 						exchangePrice1 = itemManager.getItemComposition(o1.getId()).getPrice();
 					}
-					return  exchangePrice2 - exchangePrice1;
+					return exchangePrice2 - exchangePrice1;
 				}
 			});
 
 			int keepCount = getDefaultItemsKept();
-			int wildyLevel = getCurrentWildyLevel();
 
 			List<Widget> keptItems = new ArrayList<>();
 			List<Widget> lostItems = new ArrayList<>();
@@ -216,7 +243,7 @@ public class KeptOnDeathPlugin extends Plugin
 
 				ItemComposition c = itemManager.getItemComposition(i.getId());
 				itemWidget.setAction(1, String.format(ACTION_TEXT, c.getName()));
-				if (keepCount > 0 || !checkTradeable(i.getId(), c))
+				if (keepCount > 0 || (!checkTradeable(i.getId(), c) && wildyLevel < 21))
 				{
 					keepCount = keepCount < 0 ? -1 : keepCount - 1;
 
@@ -261,20 +288,22 @@ public class KeptOnDeathPlugin extends Plugin
 				}
 			}
 
+			int rows = keptItems.size() > MAX_ROW_ITEMS ? keptItems.size() / MAX_ROW_ITEMS : 0;
+			// Adjust items lost container position if new rows were added to kept items container
+			lost.setOriginalY(ORIGINAL_LOST_Y + (rows * Y_INCREMENT));
+			lost.setOriginalHeight(ORIGINAL_LOST_HEIGHT - (rows * Y_INCREMENT));
 			setWidgetChildren(kept, keptItems);
-			if (keptItems.size() > 8)
-			{
-				// Adjust items lost container position if new rows were added to kept items container
-				lost.setOriginalY(lost.getOriginalY() + ((keptItems.size() / 8) * Y_INCREMENT));
-				lost.setOriginalHeight(lost.getOriginalHeight() - ((keptItems.size() / 8) * Y_INCREMENT));
-			}
 			setWidgetChildren(lost, lostItems);
+
+			updateKeptWidgetInfoText();
 		}
 	}
 
 	/**
 	 * Wrapper for widget.setChildren() but updates the child index and original positions
-	 * @param parent Widget to override children
+	 * Used for Items Kept and Lost containers
+	 *
+	 * @param parent  Widget to override children
 	 * @param widgets Children to set on parent
 	 */
 	private void setWidgetChildren(Widget parent, List<Widget> widgets)
@@ -312,11 +341,11 @@ public class KeptOnDeathPlugin extends Plugin
 	}
 
 	/**
-	 * Corrects the Information panel with custom text
+	 * Creates the text to be displayed in the right side of the interface based on current selections
 	 */
-	private void updateKeptWidgetInfoText()
+	private String getUpdatedInfoText()
 	{
-		String textToAdd = String.format(NORMAL, getDefaultItemsKept());
+		String textToAdd = DEFAULT;
 
 		if (isSkulled)
 		{
@@ -328,7 +357,9 @@ public class KeptOnDeathPlugin extends Plugin
 			textToAdd += LINE_BREAK + PROTECTING_ITEM;
 		}
 
-		if (getCurrentWildyLevel() < 1)
+		textToAdd += LINE_BREAK + String.format(ACTUAL, getDefaultItemsKept());
+
+		if (wildyLevel < 1)
 		{
 			textToAdd += LINE_BREAK + LINE_BREAK + NON_PVP;
 		}
@@ -345,8 +376,16 @@ public class KeptOnDeathPlugin extends Plugin
 
 		textToAdd += LINE_BREAK + LINE_BREAK + CHANGED_MECHANICS;
 
-		Widget info = client.getWidget(WidgetInfo.ITEMS_KEPT_INFORMATION_CONTAINER);
-		info.setText(textToAdd);
+		return textToAdd;
+	}
+
+	/**
+	 * Corrects the Information panel based on the item containers
+	 */
+	private void updateKeptWidgetInfoText()
+	{
+		// Add Information text widget
+		createNewTextWidget();
 
 		// Update Items lost total value
 		Widget lost = client.getWidget(WidgetInfo.ITEMS_LOST_ON_DEATH_CONTAINER);
@@ -368,6 +407,7 @@ public class KeptOnDeathPlugin extends Plugin
 		max.setText(String.format(MAX_KEPT_ITEMS_FORMAT, kept.getChildren().length));
 	}
 
+	// isTradeable actually checks if they are traded on the grand exchange, some items are trade-able but not via GE
 	private boolean checkTradeable(int id, ItemComposition c)
 	{
 		switch (id)
@@ -383,5 +423,113 @@ public class KeptOnDeathPlugin extends Plugin
 		}
 
 		return c.isTradeable();
+	}
+
+	private void createNewTextWidget()
+	{
+		// The text use to be put inside this container but since we can't create LAYER widgets
+		// We need to edit this to be a layer for adding buttons.
+		Widget old = client.getWidget(WidgetInfo.ITEMS_KEPT_INFORMATION_CONTAINER);
+
+		// TEXT container would be the last child, if it exists create it.
+		// client.getWidget() seems to have false positives
+		Widget[] children = old.getChildren();
+		if (children != null && children.length > 0)
+		{
+			Widget x = old.getChild(children.length - 1);
+			if (x.getId() == WidgetInfo.ITEMS_KEPT_CUSTOM_TEXT_CONTAINER.getId())
+			{
+				x.setText(getUpdatedInfoText());
+				return;
+			}
+		}
+
+		Widget w = old.createChild(-1, WidgetType.TEXT);
+		// Position under buttons taking remaining space
+		w.setOriginalWidth(old.getOriginalWidth());
+		w.setOriginalHeight(ORIGINAL_INFO_HEIGHT - old.getOriginalHeight());
+		w.setOriginalY(old.getOriginalHeight());
+
+		w.setFontId(494);
+		w.setTextShadowed(true);
+		w.setTextColor(0xFF981F);
+
+		w.setText(getUpdatedInfoText());
+		w.setId(WidgetInfo.ITEMS_KEPT_CUSTOM_TEXT_CONTAINER.getId());
+		w.revalidate();
+
+		// Need to reset height so text is visible?
+		old.setOriginalHeight(ORIGINAL_INFO_HEIGHT);
+		old.revalidate();
+	}
+
+	private void createWidgetButtons()
+	{
+		buttonMap.clear();
+
+		createButton(PROTECT_ITEM_BUTTON_NAME, PROTECT_ITEM_SPRITE_ID, protectingItem);
+		createButton(SKULLED_BUTTON_NAME, SKULL_SPRITE_ID, isSkulled);
+		createButton(LOW_WILDY_BUTTON_NAME, SWORD_SPRITE_ID, wildyLevel > 0 && wildyLevel <= 20);
+		createButton(DEEP_WILDY_BUTTON_NAME, SKULL_2_SPRITE_ID, wildyLevel > 20);
+
+		Widget parent = client.getWidget(WidgetInfo.ITEMS_KEPT_INFORMATION_CONTAINER);
+		parent.setType(WidgetType.LAYER);
+		parent.revalidate();
+		WidgetButton.addButtonsToContainerWidget(parent, buttonMap.values());
+	}
+
+	private void createButton(String name, int spriteID, boolean startingFlag)
+	{
+		WidgetButton button = new WidgetButton(name, spriteID, startingFlag, createRunnable(name), client);
+		buttonMap.put(name, button);
+	}
+
+	private WidgetButtonRunnable createRunnable(String name)
+	{
+		return new WidgetButtonRunnable(name)
+		{
+			@Override
+			public void run(boolean selected)
+			{
+				buttonCallback(this.getName(), selected);
+			}
+		};
+	}
+
+	private void buttonCallback(String name, boolean selected)
+	{
+		log.debug("Clicked Widget Button {}. New value: {}", name, selected);
+		switch (name)
+		{
+			case PROTECT_ITEM_BUTTON_NAME:
+				protectingItem = selected;
+				break;
+			case SKULLED_BUTTON_NAME:
+				isSkulled = selected;
+				break;
+			case LOW_WILDY_BUTTON_NAME:
+				if (!selected)
+				{
+					getCurrentWildyLevel();
+					break;
+				}
+				wildyLevel = 1;
+				buttonMap.get(DEEP_WILDY_BUTTON_NAME).setSelected(false);
+				break;
+			case DEEP_WILDY_BUTTON_NAME:
+				if (!selected)
+				{
+					getCurrentWildyLevel();
+					break;
+				}
+				wildyLevel = 21;
+				buttonMap.get(LOW_WILDY_BUTTON_NAME).setSelected(false);
+				break;
+			default:
+				log.warn("Unhandled Button Name: {}", name);
+				return;
+		}
+
+		recreateItemsKeptOnDeathWidget();
 	}
 }
