@@ -65,6 +65,7 @@ public class KeptOnDeathPlugin extends Plugin
 {
 	// Handles Clicking on items in Kept on Death Interface
 	private static final int SCRIPT_ID = ScriptID.KEPT_LOST_ITEM_EXAMINE;
+	private static final double HIGH_ALCH = 0.6;
 
 	// Item Container helpers
 	private static final int MAX_ROW_ITEMS = 8;
@@ -411,14 +412,20 @@ public class KeptOnDeathPlugin extends Plugin
 
 		// Update Items lost total value
 		Widget lost = client.getWidget(WidgetInfo.ITEMS_LOST_ON_DEATH_CONTAINER);
-		int total = 0;
+		double total = 0;
 		for (Widget w : lost.getChildren())
 		{
 			if (w.getItemId() == -1)
 			{
 				continue;
 			}
-			total += itemManager.getItemPrice(w.getItemId());
+			double price = itemManager.getItemPrice(w.getItemId());
+			if (price == 0)
+			{
+				// Default to alch price
+				price = itemManager.getItemComposition(w.getItemId()).getPrice() * HIGH_ALCH;
+			}
+			total += price;
 		}
 		Widget lostValue = client.getWidget(WidgetInfo.ITEMS_LOST_VALUE);
 		lostValue.setText(NUMBER_FORMAT.format(total) + " gp");
