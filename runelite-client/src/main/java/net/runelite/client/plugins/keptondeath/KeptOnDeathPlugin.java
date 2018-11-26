@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import javax.inject.Inject;
@@ -45,6 +46,7 @@ import net.runelite.api.SkullIcon;
 import net.runelite.api.SpriteID;
 import net.runelite.api.Varbits;
 import net.runelite.api.WidgetType;
+import net.runelite.api.WorldType;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
@@ -143,6 +145,13 @@ public class KeptOnDeathPlugin extends Plugin
 	{
 		if (client.getVar(Varbits.IN_WILDERNESS) != 1)
 		{
+			// if they are in a PvP world and not in a safe zone act like in lvl 1 wildy
+			// if they are in wildy and in PvP world let normal wildy code execute.
+			if (isInPvpWorld() && !isInPvPSafeZone())
+			{
+				wildyLevel = 1;
+				return wildyLevel;
+			}
 			wildyLevel = -1;
 			return wildyLevel;
 		}
@@ -153,6 +162,18 @@ public class KeptOnDeathPlugin extends Plugin
 		int upperLevel = ((y - 3520) / 8) + 1;
 		wildyLevel = (y > 6400 ? underLevel : upperLevel);
 		return wildyLevel;
+	}
+
+	private boolean isInPvpWorld()
+	{
+		EnumSet<WorldType> world = client.getWorldType();
+		return world.contains(WorldType.PVP) || world.contains(WorldType.PVP_HIGH_RISK);
+	}
+
+	private boolean isInPvPSafeZone()
+	{
+		Widget w = client.getWidget(WidgetInfo.PVP_WORLD_SAFE_ZONE);
+		return w != null && !w.isHidden();
 	}
 
 	private int getDefaultItemsKept()
