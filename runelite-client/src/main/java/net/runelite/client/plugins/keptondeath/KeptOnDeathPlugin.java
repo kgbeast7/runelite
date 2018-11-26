@@ -48,7 +48,7 @@ import net.runelite.api.SpriteID;
 import net.runelite.api.Varbits;
 import net.runelite.api.WidgetType;
 import net.runelite.api.WorldType;
-import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.game.ItemManager;
@@ -118,13 +118,12 @@ public class KeptOnDeathPlugin extends Plugin
 	private int wildyLevel = -1;
 
 	@Subscribe
-	protected void onGameTick(GameTick t)
+	protected void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
-		boolean old = widgetVisible;
-		widgetVisible = client.getWidget(WidgetInfo.ITEMS_LOST_ON_DEATH_CONTAINER) != null;
-		// TODO: Determine if they reopened widget without closing it.
-		if (widgetVisible && !old)
+		if (event.getEventName().equals("deathKeepBuild"))
 		{
+			// The script in charge of building the Items Kept on Death interface has finished running.
+			// Make all necessary changes now.
 			if (isInSafeArea())
 			{
 				return;
