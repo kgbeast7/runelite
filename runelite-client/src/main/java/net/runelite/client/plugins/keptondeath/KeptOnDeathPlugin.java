@@ -29,7 +29,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,11 +36,13 @@ import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.FontID;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.ScriptID;
 import net.runelite.api.SkullIcon;
 import net.runelite.api.SpriteID;
 import net.runelite.api.Varbits;
@@ -63,7 +64,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 public class KeptOnDeathPlugin extends Plugin
 {
 	// Handles Clicking on items in Kept on Death Interface
-	private static final int SCRIPT_ID = 1603;
+	private static final int SCRIPT_ID = ScriptID.KEPT_LOST_ITEM_EXAMINE;
 
 	// Item Container helpers
 	private static final int MAX_ROW_ITEMS = 8;
@@ -89,6 +90,7 @@ public class KeptOnDeathPlugin extends Plugin
 	private static final String NON_PVP = "You will have 1 hour to retrieve your lost items.";
 	private static final String LINE_BREAK = "<br>";
 	private static final int ORIGINAL_INFO_HEIGHT = 183;
+	private static final int FONT_COLOR = 0xFF981F;
 
 	// Button Names and Images
 	private static final String PROTECT_ITEM_BUTTON_NAME = "Protect Item Prayer";
@@ -163,6 +165,7 @@ public class KeptOnDeathPlugin extends Plugin
 
 		int y = client.getLocalPlayer().getWorldLocation().getY();
 
+		// Credits to atomicint_#5069 (Discord)
 		int underLevel = ((y - 9920) / 8) + 1;
 		int upperLevel = ((y - 3520) / 8) + 1;
 		wildyLevel = (y > 6400 ? underLevel : upperLevel);
@@ -223,23 +226,19 @@ public class KeptOnDeathPlugin extends Plugin
 			Collections.addAll(items, inv);
 			Collections.addAll(items, equip);
 			// Sort by item price
-			items.sort(new Comparator<Item>()
+			items.sort((o1, o2) ->
 			{
-				@Override
-				public int compare(Item o1, Item o2)
+				int exchangePrice2 = itemManager.getItemPrice(o2.getId());
+				if (exchangePrice2 == 0)
 				{
-					int exchangePrice2 = itemManager.getItemPrice(o2.getId());
-					if (exchangePrice2 == 0)
-					{
-						exchangePrice2 = itemManager.getItemComposition(o2.getId()).getPrice();
-					}
-					int exchangePrice1 = itemManager.getItemPrice(o1.getId());
-					if (exchangePrice1 == 0)
-					{
-						exchangePrice1 = itemManager.getItemComposition(o1.getId()).getPrice();
-					}
-					return exchangePrice2 - exchangePrice1;
+					exchangePrice2 = itemManager.getItemComposition(o2.getId()).getPrice();
 				}
+				int exchangePrice1 = itemManager.getItemPrice(o1.getId());
+				if (exchangePrice1 == 0)
+				{
+					exchangePrice1 = itemManager.getItemComposition(o1.getId()).getPrice();
+				}
+				return exchangePrice2 - exchangePrice1;
 			});
 
 			int keepCount = getDefaultItemsKept();
@@ -474,9 +473,9 @@ public class KeptOnDeathPlugin extends Plugin
 		w.setOriginalHeight(ORIGINAL_INFO_HEIGHT - old.getOriginalHeight());
 		w.setOriginalY(old.getOriginalHeight());
 
-		w.setFontId(494);
+		w.setFontId(FontID.PLAIN_11);
 		w.setTextShadowed(true);
-		w.setTextColor(0xFF981F);
+		w.setTextColor(FONT_COLOR);
 
 		w.setText(getUpdatedInfoText());
 		w.setId(WidgetInfo.ITEMS_KEPT_CUSTOM_TEXT_CONTAINER.getId());

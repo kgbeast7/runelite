@@ -29,6 +29,7 @@ import java.util.Collection;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.SpriteID;
 import net.runelite.api.WidgetType;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -52,8 +53,8 @@ public class WidgetButton
 	private boolean selected;
 	private WidgetButtonRunnable callback;
 
-	private int backgroundSpriteId = 170;
-	private int selectedBackgroundSpriteId = 179;
+	private int backgroundSpriteId = SpriteID.EQUIPMENT_SLOT_TILE;
+	private int selectedBackgroundSpriteId = SpriteID.EQUIPMENT_SLOT_SELECTED;
 
 	WidgetButton(String name, int spriteID, boolean selectedStartState, Client client)
 	{
