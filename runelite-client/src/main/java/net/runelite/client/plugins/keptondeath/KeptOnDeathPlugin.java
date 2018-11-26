@@ -123,6 +123,11 @@ public class KeptOnDeathPlugin extends Plugin
 		// TODO: Determine if they reopened widget without closing it.
 		if (widgetVisible && !old)
 		{
+			if (isInSafeArea())
+			{
+				return;
+			}
+
 			// Above 20 wildy we have nothing new to display
 			if (getCurrentWildyLevel() <= 20)
 			{
@@ -173,6 +178,13 @@ public class KeptOnDeathPlugin extends Plugin
 	private boolean isInPvPSafeZone()
 	{
 		Widget w = client.getWidget(WidgetInfo.PVP_WORLD_SAFE_ZONE);
+		return w != null && !w.isHidden();
+	}
+
+	private boolean isInSafeArea()
+	{
+		// We must check last child since checking for the widget via client.getWidget doesn't work as expected
+		Widget w = client.getWidget(WidgetInfo.ITEMS_KEPT_SAFE_ZONE_CONTAINER);
 		return w != null && !w.isHidden();
 	}
 
@@ -443,7 +455,7 @@ public class KeptOnDeathPlugin extends Plugin
 		Widget old = client.getWidget(WidgetInfo.ITEMS_KEPT_INFORMATION_CONTAINER);
 
 		// TEXT container would be the last child, if it exists create it.
-		// client.getWidget() seems to have false positives
+		// client.getWidget() seems to not find indexed child widgets
 		Widget[] children = old.getChildren();
 		if (children != null && children.length > 0)
 		{
