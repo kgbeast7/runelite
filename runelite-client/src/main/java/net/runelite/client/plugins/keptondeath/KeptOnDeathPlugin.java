@@ -133,13 +133,9 @@ public class KeptOnDeathPlugin extends Plugin
 				return;
 			}
 
-			// Above 20 wildy we have nothing new to display
-			if (getCurrentWildyLevel() <= 20)
-			{
-				syncSettings();
-				createWidgetButtons();
-				recreateItemsKeptOnDeathWidget();
-			}
+			syncSettings();
+			createWidgetButtons();
+			recreateItemsKeptOnDeathWidget();
 		}
 	}
 
@@ -149,9 +145,10 @@ public class KeptOnDeathPlugin extends Plugin
 		SkullIcon s = client.getLocalPlayer().getSkullIcon();
 		isSkulled = (s != null && s.equals(SkullIcon.SKULL));
 		protectingItem = client.getVar(Varbits.PRAYER_PROTECT_ITEM) == 1;
+		syncCurrentWildyLevel();
 	}
 
-	private int getCurrentWildyLevel()
+	private void syncCurrentWildyLevel()
 	{
 		if (client.getVar(Varbits.IN_WILDERNESS) != 1)
 		{
@@ -160,10 +157,10 @@ public class KeptOnDeathPlugin extends Plugin
 			if (isInPvpWorld() && !isInPvPSafeZone())
 			{
 				wildyLevel = 1;
-				return wildyLevel;
+				return;
 			}
 			wildyLevel = -1;
-			return wildyLevel;
+			return;
 		}
 
 		int y = client.getLocalPlayer().getWorldLocation().getY();
@@ -172,7 +169,6 @@ public class KeptOnDeathPlugin extends Plugin
 		int underLevel = ((y - 9920) / 8) + 1;
 		int upperLevel = ((y - 3520) / 8) + 1;
 		wildyLevel = (y > 6400 ? underLevel : upperLevel);
-		return wildyLevel;
 	}
 
 	private boolean isInPvpWorld()
@@ -548,7 +544,7 @@ public class KeptOnDeathPlugin extends Plugin
 			case LOW_WILDY_BUTTON_NAME:
 				if (!selected)
 				{
-					getCurrentWildyLevel();
+					syncCurrentWildyLevel();
 					break;
 				}
 				wildyLevel = 1;
@@ -557,7 +553,7 @@ public class KeptOnDeathPlugin extends Plugin
 			case DEEP_WILDY_BUTTON_NAME:
 				if (!selected)
 				{
-					getCurrentWildyLevel();
+					syncCurrentWildyLevel();
 					break;
 				}
 				wildyLevel = 21;
