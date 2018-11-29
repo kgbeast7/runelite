@@ -27,6 +27,11 @@ package net.runelite.client.plugins.keptondeath;
 import java.util.HashSet;
 import static net.runelite.api.ItemID.*;
 
+/**
+ * Certain items aren't tradeable via the GE but can be traded between players.
+ * The {@link net.runelite.api.ItemComposition}'s `isTradeable` value is based on GE trade-ability so we need
+ * to account for these items. These items should only be kept if protected based on item value.
+ */
 public enum ActuallyTradeableItem
 {
 	// Item Packs

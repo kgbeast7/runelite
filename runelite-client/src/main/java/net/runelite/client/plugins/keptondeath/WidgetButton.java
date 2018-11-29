@@ -128,7 +128,7 @@ public class WidgetButton
 		syncBackgroundSprite();
 	}
 
-	static Widget addButtonsToContainerWidget(Widget container, Collection<WidgetButton> buttons)
+	static void addButtonsToContainerWidget(Widget container, Collection<WidgetButton> buttons)
 	{
 		Widget[] children = container.getChildren();
 		if (children == null)
@@ -165,7 +165,6 @@ public class WidgetButton
 		container.setOriginalHeight(yIncrement * rows);
 		container.setChildren(itemsArray);
 		container.revalidate();
-		return container;
 	}
 
 	private static Widget updateWidgetPosition(Widget w, int id, int index, int originalX, int originalY)

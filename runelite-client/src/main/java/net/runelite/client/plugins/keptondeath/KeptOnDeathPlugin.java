@@ -201,7 +201,7 @@ public class KeptOnDeathPlugin extends Plugin
 
 		if (isSkulled)
 		{
-			count = 0;
+			count -= 3;
 		}
 
 		if (protectingItem)
@@ -461,10 +461,10 @@ public class KeptOnDeathPlugin extends Plugin
 	private void createNewTextWidget()
 	{
 		// The text use to be put inside this container but since we can't create LAYER widgets
-		// We need to edit this to be a layer for adding buttons.
+		// We needed to edit this to be a layer for adding buttons
 		Widget old = client.getWidget(WidgetInfo.ITEMS_KEPT_INFORMATION_CONTAINER);
 
-		// TEXT container would be the last child, if it exists create it.
+		// Update the existing TEXT container if it exists. It should be the last child of the old text widget
 		// client.getWidget() seems to not find indexed child widgets
 		Widget[] children = old.getChildren();
 		if (children != null && children.length > 0)

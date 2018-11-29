@@ -28,6 +28,12 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import net.runelite.api.ItemID;
 
+/**
+ * Certain Items receive a white outline by Jagex as they are always lost on death. This is sometimes incorrectly
+ * added to Items by Jagex as the item is actually kept in non-pvp areas of the game, such as the Rune Pouch.
+ *
+ * The white outline will be added to these items when they are lost on death.
+ */
 public enum AlwaysLostItem
 {
 	RUNE_POUCH(ItemID.RUNE_POUCH, true),

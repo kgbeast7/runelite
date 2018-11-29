@@ -27,6 +27,11 @@ package net.runelite.client.plugins.keptondeath;
 import java.util.HashSet;
 import net.runelite.api.ItemID;
 
+/**
+ * Some non tradeable items are kept on death inside low level wilderness (1-20) but are turned into a broken variant.
+ *
+ * The non-broken variant will be shown inside the interface.
+ */
 public enum BrokenOnDeathItem
 {
 	// Capes
