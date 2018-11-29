@@ -49,6 +49,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.WidgetType;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.ScriptCallbackEvent;
+import net.runelite.api.vars.AccountType;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.game.ItemManager;
@@ -125,7 +126,9 @@ public class KeptOnDeathPlugin extends Plugin
 		{
 			// The script in charge of building the Items Kept on Death interface has finished running.
 			// Make all necessary changes now.
-			if (isInSafeArea())
+
+			// Ultimate Ironmen and Players inside Safe Areas (POH/Clan Wars) see the default interface
+			if (isUltimateIronman() || isInSafeArea())
 			{
 				return;
 			}
@@ -189,6 +192,11 @@ public class KeptOnDeathPlugin extends Plugin
 		// We must check last child since checking for the widget via client.getWidget doesn't work as expected
 		Widget w = client.getWidget(WidgetInfo.ITEMS_KEPT_SAFE_ZONE_CONTAINER);
 		return w != null && !w.isHidden();
+	}
+
+	private boolean isUltimateIronman()
+	{
+		return client.getAccountType().equals(AccountType.ULTIMATE_IRONMAN);
 	}
 
 	private int getDefaultItemsKept()
