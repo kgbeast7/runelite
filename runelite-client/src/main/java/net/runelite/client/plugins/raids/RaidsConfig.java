@@ -265,4 +265,15 @@ public interface RaidsConfig extends Config
 	{
 		return Color.MAGENTA;
 	}
+
+	@ConfigItem(
+		position = 21,
+		keyName = "alwaysShowWorldAndCC",
+		name = "Always show CC and World",
+		description = "The CC and World are not removed from being in the in-game scouter"
+	)
+	default boolean alwaysShowWorldAndCC()
+	{
+		return false;
+	}
 }

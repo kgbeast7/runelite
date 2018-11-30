@@ -693,7 +693,8 @@ public class RaidsPlugin extends Plugin
 		Rectangle overlaySize = overlay.getBounds();
 		if (overlaySize.width <= 0 || overlaySize.height <= 0)
 			return;
-		overlaySize.height += LINE_COMPONENT_HEIGHT;
+		if (!config.alwaysShowWorldAndCC())
+			overlaySize.height += LINE_COMPONENT_HEIGHT;
 
 		BufferedImage bim = new BufferedImage(overlaySize.width, overlaySize.height, BufferedImage.TYPE_INT_ARGB);
 		overlay.setSharable(true);
@@ -701,13 +702,15 @@ public class RaidsPlugin extends Plugin
 		g.setFont(FontManager.getRunescapeFont());
 
 		//this is needed to update the PanelComponent childDimensions, because they are a frame behind
-		overlay.render(g);
+		if (!config.alwaysShowWorldAndCC())
+			overlay.render(g);
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, overlaySize.width, overlaySize.height);
 
 		overlay.render(g);
 		screenCapture.takeScreenshot(bim, config.enableTrayNotification(), "Chambers");
 		g.dispose();
+
 		overlay.setSharable(false);
 	}
 }

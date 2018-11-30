@@ -196,7 +196,7 @@ public class RaidsOverlay extends Overlay
 			.color(color)
 			.build());
 		color = Color.ORANGE;
-		if (sharable)
+		if (sharable || config.alwaysShowWorldAndCC())
 		{
 			String clanOwner = Text.removeTags(client.getWidget(WidgetInfo.CLAN_CHAT_OWNER).getText());
 			if (clanOwner.equals("None"))
@@ -333,8 +333,8 @@ public class RaidsOverlay extends Overlay
 		{
 			panelImages.getChildren().clear();
 			Integer[] idArray = imageIds.toArray(new Integer[0]);
-			int imagesVerticalOffset = TITLE_COMPONENT_HEIGHT + (sharable ? LINE_COMPONENT_HEIGHT : 0) - BORDER_OFFSET;
-			int imagesMaxHeight = height - 2 * BORDER_OFFSET - TITLE_COMPONENT_HEIGHT - (sharable ? LINE_COMPONENT_HEIGHT : 0);
+			int imagesVerticalOffset = TITLE_COMPONENT_HEIGHT + (sharable || config.alwaysShowWorldAndCC() ? LINE_COMPONENT_HEIGHT : 0) - BORDER_OFFSET;
+			int imagesMaxHeight = height - 2 * BORDER_OFFSET - TITLE_COMPONENT_HEIGHT - (sharable || config.alwaysShowWorldAndCC() ? LINE_COMPONENT_HEIGHT : 0);
 			boolean smallImages = false;
 
 			panelImages.setPreferredLocation(new Point(0, imagesVerticalOffset));
