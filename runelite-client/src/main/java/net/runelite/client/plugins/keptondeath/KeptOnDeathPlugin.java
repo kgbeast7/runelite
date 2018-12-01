@@ -91,6 +91,7 @@ public class KeptOnDeathPlugin extends Plugin
 	private static final String CHANGED_MECHANICS = "Untradeable items are kept on death in non-pvp scenarios.";
 	private static final String NON_PVP = "You will have 1 hour to retrieve your lost items.";
 	private static final String LINE_BREAK = "<br>";
+	private static final String UIM_DEFAULT = "You are an <col=FFFFFF>UIM<col=FF981F> which means <col=FFFFFF>0<col=FF981F> items are protected by default";
 	private static final int ORIGINAL_INFO_HEIGHT = 183;
 	private static final int FONT_COLOR = 0xFF981F;
 
@@ -127,8 +128,8 @@ public class KeptOnDeathPlugin extends Plugin
 			// The script in charge of building the Items Kept on Death interface has finished running.
 			// Make all necessary changes now.
 
-			// Ultimate Ironmen and Players inside Safe Areas (POH/Clan Wars) see the default interface
-			if (isUltimateIronman() || isInSafeArea())
+			// Players inside Safe Areas (POH/Clan Wars) see the default interface
+			if (isInSafeArea())
 			{
 				return;
 			}
@@ -143,7 +144,8 @@ public class KeptOnDeathPlugin extends Plugin
 	private void syncSettings()
 	{
 		SkullIcon s = client.getLocalPlayer().getSkullIcon();
-		isSkulled = (s != null && s.equals(SkullIcon.SKULL));
+		// Ultimate iron men deaths are treated like they are always skulled
+		isSkulled = (s != null && s.equals(SkullIcon.SKULL)) || isUltimateIronman();
 		protectingItem = client.getVar(Varbits.PRAYER_PROTECT_ITEM) == 1;
 		syncCurrentWildyLevel();
 	}
@@ -379,17 +381,25 @@ public class KeptOnDeathPlugin extends Plugin
 	{
 		String textToAdd = DEFAULT;
 
-		if (isSkulled)
+		if (isUltimateIronman())
 		{
-			textToAdd += LINE_BREAK + IS_SKULLED;
+			textToAdd = UIM_DEFAULT;
+		}
+		else
+		{
+			if (isSkulled)
+			{
+				textToAdd += LINE_BREAK + IS_SKULLED;
+			}
+
+			if (protectingItem)
+			{
+				textToAdd += LINE_BREAK + PROTECTING_ITEM;
+			}
+
+			textToAdd += LINE_BREAK + String.format(ACTUAL, getDefaultItemsKept());
 		}
 
-		if (protectingItem)
-		{
-			textToAdd += LINE_BREAK + PROTECTING_ITEM;
-		}
-
-		textToAdd += LINE_BREAK + String.format(ACTUAL, getDefaultItemsKept());
 
 		if (wildyLevel < 1)
 		{
@@ -501,8 +511,12 @@ public class KeptOnDeathPlugin extends Plugin
 	{
 		buttonMap.clear();
 
-		createButton(PROTECT_ITEM_BUTTON_NAME, PROTECT_ITEM_SPRITE_ID, protectingItem);
-		createButton(SKULLED_BUTTON_NAME, SKULL_SPRITE_ID, isSkulled);
+		// Ultimate Iron men are always skulled and can't use the protect item prayer
+		if (!isUltimateIronman())
+		{
+			createButton(PROTECT_ITEM_BUTTON_NAME, PROTECT_ITEM_SPRITE_ID, protectingItem);
+			createButton(SKULLED_BUTTON_NAME, SKULL_SPRITE_ID, isSkulled);
+		}
 		createButton(LOW_WILDY_BUTTON_NAME, SWORD_SPRITE_ID, wildyLevel > 0 && wildyLevel <= 20);
 		createButton(DEEP_WILDY_BUTTON_NAME, SKULL_2_SPRITE_ID, wildyLevel > 20);
 
