@@ -453,6 +453,12 @@ public class KeptOnDeathPlugin extends Plugin
 	// isTradeable actually checks if they are traded on the grand exchange, some items are trade-able but not via GE
 	private boolean checkTradeable(int id, ItemComposition c)
 	{
+		// If the item is a note check the unnoted variants trade ability
+		if (c.getNote() != -1)
+		{
+			return checkTradeable(c.getLinkedNoteId(), itemManager.getItemComposition(c.getLinkedNoteId()));
+		}
+
 		switch (id)
 		{
 			case ItemID.COINS_995:
